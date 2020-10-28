@@ -12,7 +12,7 @@ import static com.bsi.ppaluch.crypto.CalculatorSHA.calculateSHA512;
 
 public class Coder {
 
-    public static String pepper = "12345anm8e3M-83*2cQ1mlZaU";
+    public static String PEPPER = "12345anm8e3M-83*2cQ1mlZaU";
 
     public static String generateSalt() {
         SecureRandom random = new SecureRandom();
@@ -22,7 +22,7 @@ public class Coder {
     }
 
     public static String generatePasswordHash(String masterPassword, String salt){
-        return calculateSHA512(masterPassword+salt+pepper);
+        return calculateSHA512(masterPassword+salt+ PEPPER);
     }
 
     public static String encryptPassword(String masterPasswordHash, String passwordToSave) throws Exception {
@@ -46,7 +46,7 @@ public class Coder {
     public static boolean isCorrectPassword(User oldUser, String oldPassword)
             throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         if(oldUser.isPasswordKeptAsHash()) {
-            return calculateSHA512(oldPassword + oldUser.getSalt() + pepper)
+            return calculateSHA512(oldPassword + oldUser.getSalt() + PEPPER)
                     .equals(oldUser.getPassword_hash());
         }else{
             return(oldUser.getPassword_hash()

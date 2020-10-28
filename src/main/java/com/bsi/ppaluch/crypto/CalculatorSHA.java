@@ -6,8 +6,6 @@ import java.security.NoSuchAlgorithmException;
 
 
 public class CalculatorSHA {
-
-    private static final String ALGO = "AES";
     public static String calculateSHA512(String text)
     {
         try {
