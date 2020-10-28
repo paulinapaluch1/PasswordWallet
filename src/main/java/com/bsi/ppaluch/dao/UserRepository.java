@@ -1,0 +1,19 @@
+package com.bsi.ppaluch.dao;
+
+
+import com.bsi.ppaluch.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface UserRepository extends JpaRepository<User,Integer> {
+
+    public List<User> findAll();
+
+    public User findById(int id);
+
+    public void deleteById(int id);
+
+    User findByLogin(String login);
+
+}

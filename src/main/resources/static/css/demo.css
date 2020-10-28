@@ -1,0 +1,14 @@
+
+.funny {
+	font-style: italic;
+	color: green;
+
+}
+
+.table,
+.table tr,
+.table td {
+    background-color: white !important;
+}
+
+

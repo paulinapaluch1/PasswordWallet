@@ -1,0 +1,81 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<title>Zaloguj się</title>
+	<meta charset="utf-8">
+	<link rel="stylesheet"
+		  href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+
+	<link rel="stylesheet"
+		  th:href="@{../css/demo.css}" type="text/css" />
+</head>
+
+<body th:style="'background-color: #ffe6e6'">
+<nav style="opacity:0.9"
+	 class="navbar navbar-expand-lg navbar-light bg-light d-flex justify-content-end">
+	<div class=" flex-fill"></div>
+	<div class="flex-fill">
+		<h2>PASSWORD WALLET</h2>
+	</div>
+</nav>
+<div class="container">
+
+	<div
+			style="width: 600px; margin-left: auto; margin-right: auto; margin-top: 24px; padding: 24px;">
+	<div class="card" style="opacity:0.96">
+		<div class="card-header">
+			<i class="fa fa-user"></i><b> ZALOGUJ SIĘ</b>
+		</div>
+		<div class="card-block" style="padding: 24px;">
+			<form name="f" th:action="@{/api/signin}" th:object="${user}" method="post">
+				<fieldset>
+
+					<div th:if="${param.error!=null}" class="alert alert-danger">
+						Niepoprawny login lub hasło</div>
+
+					<div th:if="${param.logout}" class="alert alert-success">
+						Zostałeś wylogowany</div>
+
+					<div class="form-group">
+						<label for="login">Login</label> <input type="text"
+																	  class="form-control" th:field="*{login}"  id="login" name="login"
+																	  placeholder="Login">
+					</div>
+
+
+					<div class="form-group">
+						<label for="password">Hasło</label> <input type="password"
+																	  class="form-control" th:field="*{password_hash}" id="password" name="password"
+																	  placeholder="Hasło">
+					</div>
+
+					<div class="form-actions" style="margin-top: 12px;">
+						<button type="submit" class="btn btn-success">ZALOGUJ</button>
+						<br><br>
+						<div th:if="${info!=null}" class="alert alert-danger">
+							Niepoprawny login lub hasło</div>
+					</div>
+
+
+				</fieldset>
+			</form>
+		</div>
+	</div>
+	</div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<title>Add password</title>
+	<meta charset="utf-8">
+	<link rel="stylesheet"
+		  href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+
+	<link rel="stylesheet"
+		  th:href="@{../css/demo.css}" type="text/css" />
+</head>
+<body th:style="'background-color: #ffe6e6'">
+
+<div class="container list">
+	<br>
+	<h3 class="title" style = "float:left;">Change master password</h3>
+	<nav class="navbar justify-content-end">
+		<div style="margin-right:10px;" th:if="${info!=null}" class="alert alert-danger">
+			Niepoprawne obecne haslo</div>
+		<a th:href="@{/api/passwords}"><button type="button"
+														 class="btn btn btn-primary mr-3 mb-2">Back</button></a>
+		<a th:href="@{/api/logout}"><button type="button"
+											class="btn btn btn-secondary mr-3 mb-2">Logout</button></a>
+
+
+	</nav>
+
+	<form action="#" th:action="@{/api/password/change}"
+		  th:object="${changer}" method="POST">
+		<div class="row">
+			<div class="mb-3 col">
+				Old password: <input type="password"
+									 th:field="*{oldPassword}"
+							 class="form-control col-10">
+			</div>
+			<div class="mb-3 col">
+				New password: <input type="text" th:field="*{newPassword}"
+								 class="form-control col-10">
+			</div>
+		</div>
+		<input type="checkbox" name="keepPaswordAsHash" th:checked="${keepPaswordAsHash} ? 'checked' : ''"> Keep password as hash
+
+		<div class="nav justify-content-end">
+			<button type="submit" class="btn mt-4 btn-info col-2 mr-2  ">Change</button>
+			<a th:href="@{/api/passwords}" class="btn mt-4 col-2 btn-danger ">Cancel</a>
+		</div>
+
+	</form>
+
+	</div>
+</div>
+
+</body>
+
+</html>
