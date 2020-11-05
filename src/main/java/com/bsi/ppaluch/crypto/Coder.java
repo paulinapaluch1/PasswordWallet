@@ -46,12 +46,22 @@ public class Coder {
     public static boolean isCorrectPassword(User oldUser, String oldPassword)
             throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         if(oldUser.isPasswordKeptAsHash()) {
-            return calculateSHA512(oldPassword + oldUser.getSalt() + PEPPER)
-                    .equals(oldUser.getPassword_hash());
+            return isTheSamePasswordSavedWithSHA(oldPassword,oldUser);
+
         }else{
-            return(oldUser.getPassword_hash()
-                    .equals(calculateHMAC(oldPassword, oldUser.getSalt())));
+            return isTheSamePasswordSavedWithHmac(oldUser, oldPassword);
         }
+    }
+
+    public static boolean isTheSamePasswordSavedWithHmac(User oldUser, String oldPassword)
+            throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
+        return oldUser.getPassword_hash()
+                .equals(calculateHMAC(oldPassword, oldUser.getSalt()));
+    }
+
+    public static boolean isTheSamePasswordSavedWithSHA(String givenPassword, User oldUser){
+        return calculateSHA512(givenPassword + oldUser.getSalt() + PEPPER)
+                .equals(oldUser.getPassword_hash());
     }
 
 }

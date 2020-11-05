@@ -30,4 +30,16 @@ public class Password {
 
     @Transient
     private String master;
+
+    public Password(String password, User user, String web_address, String description, String login) {
+        this.password = password;
+        this.user = user;
+        this.web_address = web_address;
+        this.description = description;
+        this.login = login;
+    }
+
+    public Password() {
+
+    }
 }

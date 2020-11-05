@@ -13,8 +13,14 @@ class ApplicationTests {
 	@Test
 	void contextLoads() {
 	}
+	@Test
+	public void shouldGeneratePasswordHash(){
+		String masterPassword = "TESTpassword234567";
+		String salt = generateSalt();
+		String hash = generatePasswordHash(masterPassword, salt);
 
-
+		assertNotNull(hash);
+	}
 
 
 

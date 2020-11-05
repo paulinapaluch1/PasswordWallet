@@ -28,4 +28,14 @@ public class User {
 
    @OneToMany(mappedBy = "id")
    List<Password> passwordList;
+
+   public User(String login, String salt, String passwordHash, boolean isPasswordKeptAsHash) {
+      this.login = login;
+      this.salt = salt;
+      this.password_hash = passwordHash;
+      this.isPasswordKeptAsHash = isPasswordKeptAsHash;
    }
+
+   public User() {
+   }
+}

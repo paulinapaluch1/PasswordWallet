@@ -15,6 +15,7 @@ import java.util.List;
 
 import static com.bsi.ppaluch.crypto.AESenc.*;
 import static com.bsi.ppaluch.crypto.CalculatorHmac.calculateHMAC;
+import static com.bsi.ppaluch.crypto.CalculatorSHA.calculateSHA512;
 import static com.bsi.ppaluch.crypto.Coder.*;
 
 @Controller
