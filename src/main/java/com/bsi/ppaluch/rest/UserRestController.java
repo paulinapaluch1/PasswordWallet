@@ -1,5 +1,6 @@
 package com.bsi.ppaluch.rest;
 
+import com.bsi.ppaluch.crypto.Coder;
 import com.bsi.ppaluch.dao.PasswordRepository;
 import com.bsi.ppaluch.dao.UserRepository;
 import com.bsi.ppaluch.entity.User;
@@ -15,7 +16,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 
-import static com.bsi.ppaluch.crypto.Coder.isCorrectPassword;
 
 @Controller
 @RequestMapping("/api")
@@ -26,6 +26,8 @@ public class UserRestController {
     private UserRepository userRepository;
     @Autowired
     private PasswordRepository passwordRepository;
+    @Autowired
+    Coder coder;
 
     @Autowired
     public UserRestController() {}
@@ -39,7 +41,7 @@ public class UserRestController {
     @RequestMapping(value="/signin", method=RequestMethod.POST)
     public String validateForm(User user, BindingResult result, Model theModel) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
        User userDb = userRepository.findByLogin(user.getLogin());
-        if(isCorrectPassword(userDb, user.getPassword_hash())){
+        if(coder.isCorrectPassword(userDb, user.getPassword_hash())){
             theModel.addAttribute("passwords", passwordRepository.findByUser(userDb));
             theModel.addAttribute("user", userDb);
             return "/passwords";

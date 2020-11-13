@@ -1,6 +1,7 @@
 package com.bsi.ppaluch.rest;
 
 import com.bsi.ppaluch.PasswordChanger;
+import com.bsi.ppaluch.crypto.Coder;
 import com.bsi.ppaluch.dao.PasswordRepository;
 import com.bsi.ppaluch.dao.UserRepository;
 import com.bsi.ppaluch.entity.Password;
@@ -25,6 +26,8 @@ public class PasswordRestController {
     private PasswordRepository passwordRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    Coder coder;
 
     @Autowired
     public PasswordRestController(PasswordRepository passwordRepository) {
@@ -82,7 +85,7 @@ public class PasswordRestController {
     @RequestMapping(value = "/password/change", method = RequestMethod.POST)
     public String changeMaster(@ModelAttribute("changer") PasswordChanger changer, Model theModel) throws Exception {
         User oldUser = userRepository.findById(8);
-        if (isCorrectPassword(oldUser, changer.getOldPassword())) {
+        if (coder.isCorrectPassword(oldUser, changer.getOldPassword())) {
             if(changer.isKeepPaswordAsHash()) {
                 changeSHAPasswordMaster(changer, oldUser);
             }
@@ -102,7 +105,7 @@ public class PasswordRestController {
         String newSalt = generateSalt();
         String newHmac = calculateHMAC(changer.getNewPassword(), newSalt);
         List<Password> currentPasswordList
-                = encryptAllPasswords(passwordRepository.findByUser(oldUser), newHmac, oldUser);
+                = coder.encryptAllPasswords(passwordRepository.findByUser(oldUser), newHmac, oldUser);
         oldUser.setPasswordKeptAsHash(false);
         oldUser.setSalt(newSalt);
         oldUser.setPassword_hash(newHmac);
@@ -112,9 +115,9 @@ public class PasswordRestController {
 
     private void changeSHAPasswordMaster(PasswordChanger changer, User oldUser) throws Exception {
         String newSalt = generateSalt();
-        String newHash = generatePasswordHash(changer.getNewPassword(), newSalt);
+        String newHash = coder.generatePasswordHash(changer.getNewPassword(), newSalt);
         List<Password> currentPasswordList
-                = encryptAllPasswords(passwordRepository.findByUser(oldUser), newHash, oldUser);
+                = coder.encryptAllPasswords(passwordRepository.findByUser(oldUser), newHash, oldUser);
         oldUser.setPasswordKeptAsHash(true);
         oldUser.setSalt(newSalt);
         oldUser.setPassword_hash(newHash);

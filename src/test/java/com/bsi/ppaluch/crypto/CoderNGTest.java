@@ -6,9 +6,14 @@
 package com.bsi.ppaluch.crypto;
 
 import com.bsi.ppaluch.entity.User;
+import org.easymock.EasyMockSupport;
+import org.easymock.Mock;
+import org.easymock.TestSubject;
 import org.testng.annotations.*;
 
 import static com.bsi.ppaluch.crypto.Coder.*;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
@@ -18,6 +23,13 @@ import static org.testng.Assert.assertNotNull;
  */
 public class CoderNGTest {
     public static String SALT = "[B@8c75639";
+
+    @Mock
+    private CorrectPasswordVerifier mockPasswordVerifier;
+
+    @TestSubject
+    private Coder coder = new Coder(mockPasswordVerifier);
+
 
     public CoderNGTest() {
     }
@@ -32,6 +44,7 @@ public class CoderNGTest {
 
     @BeforeMethod
     public void setUpMethod() throws Exception {
+        EasyMockSupport.injectMocks(this);
 
     }
 
@@ -54,7 +67,8 @@ public class CoderNGTest {
     @Test(dataProvider = "shouldGeneratePasswordHashDataProvider")
     public void shouldGeneratePasswordHash(String masterPassword, String expResult) {
         System.out.println("generatePasswordHash");
-        String result = generatePasswordHash(masterPassword, SALT);
+        Coder coder = new Coder(new CorrectPasswordVerifierAdapter());
+        String result = coder.generatePasswordHash(masterPassword, SALT);
         assertEquals(result, expResult);
     }
 
@@ -64,7 +78,8 @@ public class CoderNGTest {
         String masterPasswordHash = "caf5570997751f5d9002750ab6ca7169309b56d3f319ef9f1134c2dc83289b253fc143b55fd0f14e6b0ccd9dc2c94fbae59a75dad1d796151c0c0e1c433d5eac";
         String passwordToSave = "123";
         String expResult = "oEcapAJ0PTcPPPHFCvfi6g==";
-        String result = encryptPassword(masterPasswordHash, passwordToSave);
+        Coder coder = new Coder(new CorrectPasswordVerifierAdapter());
+        String result = coder.encryptPassword(masterPasswordHash, passwordToSave);
         assertEquals(result, expResult);
     }
 
@@ -76,7 +91,8 @@ public class CoderNGTest {
     @Test(dataProvider = "shouldDecryptPasswordDataProvider")
     public void shouldDecryptPassword(String masterPasswordHash, String encryptedPassword, String expResult) throws Exception {
         System.out.println("shouldDecryptPassword");
-        String result = Coder.decryptPassword(masterPasswordHash, encryptedPassword);
+        Coder coder = new Coder(new CorrectPasswordVerifierAdapter());
+        String result = coder.decryptPassword(masterPasswordHash, encryptedPassword);
         assertEquals(result, expResult);
     }
 
@@ -86,7 +102,9 @@ public class CoderNGTest {
         User oldUser = new User("login6","[B@4e9f6d66","ab45bcb99f241934fbcaefde51bb389a8982dec110e9d332ba9a7a7a6191f345ebbed372ad97454debbfba4782adfeb1d64f9d15e8599726328e5399f3022e0a",true);
         String oldPassword = "123";
         boolean expResult = true;
-        boolean result = Coder.isCorrectPassword(oldUser, oldPassword);
+        Coder coder = new Coder(new CorrectPasswordVerifierAdapter());
+
+        boolean result = coder.isCorrectPassword(oldUser, oldPassword);
         assertEquals(result, expResult);
     }
 
@@ -96,7 +114,8 @@ public class CoderNGTest {
         User oldUser = new User("login6","[B@cee6738","b151f961c172df7c928ef2c8217b98ed01c2e47ee783f02573e8b628ccd28d49ec1a856b3e5432cc74f8392b292f99e57386981c683080f700cf474c0eec0b29",false);
         String givenPassword = "123";
         boolean expResult = true;
-        boolean result = Coder.isTheSamePasswordSavedWithHmac(oldUser, givenPassword);
+       CorrectPasswordVerifier verifier = new CorrectPasswordVerifier();
+        boolean result = verifier.isTheSamePasswordSavedWithHmac(oldUser, givenPassword);
         assertEquals(result, expResult);
     }
 
@@ -106,8 +125,34 @@ public class CoderNGTest {
         User oldUser = new User("login6","[B@4e9f6d66","ab45bcb99f241934fbcaefde51bb389a8982dec110e9d332ba9a7a7a6191f345ebbed372ad97454debbfba4782adfeb1d64f9d15e8599726328e5399f3022e0a",true);
         String givenPassword = "123";
         boolean expResult = true;
-        boolean result = Coder.isTheSamePasswordSavedWithSHA( givenPassword,oldUser);
+        CorrectPasswordVerifier verifier = new CorrectPasswordVerifier();
+        boolean result = verifier.isTheSamePasswordSavedWithSHA( givenPassword,oldUser);
         assertEquals(result, expResult);
     }
+
+    @Test
+    public void shouldCheckIfGivenPasswordIsCorrectWhenPasswordsSavedWithHmac_usingMock() throws Exception {
+        System.out.println("shouldCheckIfGivenPasswordIsCorrectWhenPasswordsSavedWithHmac_usingMock");
+        User oldUser = new User("login6","[B@cee6738","b151f961c172df7c928ef2c8217b98ed01c2e47ee783f02573e8b628ccd28d49ec1a856b3e5432cc74f8392b292f99e57386981c683080f700cf474c0eec0b29",false);
+        String givenPassword = "123";
+        expect(mockPasswordVerifier.isTheSamePasswordSavedWithHmac(oldUser,givenPassword)).andReturn(true);
+        replay(mockPasswordVerifier);
+
+        assertEquals(coder.getVerifier().isTheSamePasswordSavedWithHmac(oldUser, givenPassword), true);
+    }
+
+    @Test
+    public void shouldCheckIfGivenPasswordIsCorrectWhenPasswordsSavedWithSha_usingMock() throws Exception {
+        System.out.println("shouldCheckIfGivenPasswordIsCorrectWhenPasswordsSavedWithSha_usingMock");
+        User oldUser = new User("login6","[B@4e9f6d66","ab45bcb99f241934fbcaefde51bb389a8982dec110e9d332ba9a7a7a6191f345ebbed372ad97454debbfba4782adfeb1d64f9d15e8599726328e5399f3022e0a",true);
+        String givenPassword = "123";
+        expect(mockPasswordVerifier.isTheSamePasswordSavedWithSHA(givenPassword,oldUser)).andReturn(true);
+        replay(mockPasswordVerifier);
+
+        assertEquals(coder.getVerifier().isTheSamePasswordSavedWithSHA(givenPassword,oldUser), true);
+
+    }
+
+
 
 }
