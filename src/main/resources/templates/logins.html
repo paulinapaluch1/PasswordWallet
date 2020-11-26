@@ -1,0 +1,60 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<title>Add password</title>
+	<meta charset="utf-8">
+	<link rel="stylesheet"
+		  href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+
+
+	<link rel="stylesheet"
+		  th:href="@{../css/demo.css}" type="text/css" />
+</head>
+<body th:style="'background-color: #ffe6e6'">
+
+<div class="container list">
+	<br>
+	<h3 class="title" style = "float:left;">Your last logins</h3>
+	<nav class="navbar justify-content-end">
+		<a th:href="@{/api/passwords}"><button type="button"
+														 class="btn btn btn-primary mr-3 mb-2">Back</button></a>
+		<a th:href="@{/api/logout}"><button type="button"
+											class="btn btn btn-secondary mr-3 mb-2">Logout</button></a>
+	</nav>
+	Last successfull login date: <span th:text="${successfullLoginDate}"></span> <br/>
+	Last unsuccessful login date: <span th:text="${failedLoginDate}"></span>
+
+	<div class="table-responsive">
+		<table style="background-color:white;width:50%;" class="table table-hover table-bordered table-sm mt-2">
+			<thead>
+			<tr class="table-secondary">
+				<th class="text-center" colspan="3">Blocked IP addresses from which logging to your account was unsuccessful</th>
+
+			</tr>
+			<tr class="table-secondary">
+				<th class="text-center">Id</th>
+				<th class="text-center">IP</th>
+				<th></th>
+			</tr>
+			</thead>
+			<tbody id="myTable">
+			<tr th:each="tempIP:${blockedIPs}">
+				<td class="text-center" th:text="${tempIP.id}" />
+				<td class="text-center" th:text="${tempIP.ipAddressText}" />
+
+				<td class="text-center" ><a
+						th:href="@{/api/users/unlock(id=${tempIP.id},userId=${id})}"
+						class="btn btn-info">Unlock IP</a></td>
+
+			</tr>
+			</tbody>
+		</table>
+	</div>
+
+
+	</div>
+</div>
+
+</body>
+
+</html>

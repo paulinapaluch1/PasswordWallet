@@ -2,6 +2,8 @@ package com.bsi.ppaluch.crypto;
 
 import com.bsi.ppaluch.entity.Password;
 import com.bsi.ppaluch.entity.User;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 
 import java.security.*;
 import java.util.List;
@@ -9,6 +11,7 @@ import java.util.List;
 import static com.bsi.ppaluch.crypto.AESenc.*;
 import static com.bsi.ppaluch.crypto.CalculatorSHA.calculateSHA512;
 
+@Component
 public class Coder {
 
     private CorrectPasswordVerifier verifier;
@@ -17,6 +20,10 @@ public class Coder {
 
     public Coder(CorrectPasswordVerifier verifier) {
         this.verifier = verifier;
+    }
+
+    public Coder() {
+        this.verifier = new CorrectPasswordVerifier();
     }
 
     public static String generateSalt() {

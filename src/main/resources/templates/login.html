@@ -52,8 +52,8 @@
 					<div class="form-actions" style="margin-top: 12px;">
 						<button type="submit" class="btn btn-success">ZALOGUJ</button>
 						<br><br>
-						<div th:if="${info!=null}" class="alert alert-danger">
-							Niepoprawny login lub hasło</div>
+						<div th:if="${info!=null}" class="alert alert-danger" th:text="${info}">
+							</div>
 					</div>
 
 

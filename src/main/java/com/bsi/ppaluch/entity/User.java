@@ -26,6 +26,9 @@ public class User {
    @Column(name="is_password_kept_as_hash")
    private boolean isPasswordKeptAsHash;
 
+   @Column(name="incorrect_login_trial_number")
+   private int incorrectLoginTrialNumber;
+
    @OneToMany(mappedBy = "id")
    List<Password> passwordList;
 

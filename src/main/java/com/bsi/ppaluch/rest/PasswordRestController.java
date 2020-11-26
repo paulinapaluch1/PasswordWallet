@@ -1,6 +1,6 @@
 package com.bsi.ppaluch.rest;
 
-import com.bsi.ppaluch.PasswordChanger;
+import com.bsi.ppaluch.login.PasswordChanger;
 import com.bsi.ppaluch.crypto.Coder;
 import com.bsi.ppaluch.dao.PasswordRepository;
 import com.bsi.ppaluch.dao.UserRepository;
@@ -16,12 +16,10 @@ import java.util.List;
 
 import static com.bsi.ppaluch.crypto.AESenc.*;
 import static com.bsi.ppaluch.crypto.CalculatorHmac.calculateHMAC;
-import static com.bsi.ppaluch.crypto.CalculatorSHA.calculateSHA512;
 import static com.bsi.ppaluch.crypto.Coder.*;
 
 @Controller
 @RequestMapping("/api")
-
 public class PasswordRestController {
     private PasswordRepository passwordRepository;
     @Autowired
@@ -32,11 +30,13 @@ public class PasswordRestController {
     @Autowired
     public PasswordRestController(PasswordRepository passwordRepository) {
         this.passwordRepository = passwordRepository;
+        coder = new Coder();
     }
 
     @GetMapping("/passwords")
     public String getAllPasswords(Model theModel)   {
         theModel.addAttribute("passwords", passwordRepository.findAll());
+        theModel.addAttribute("userId",Integer.valueOf(8));
         return "passwords";
     }
 
@@ -57,12 +57,10 @@ public class PasswordRestController {
         return "addPassword";
     }
 
-
     @RequestMapping(value = "/passwords/save", method = RequestMethod.POST)
     public String savePassword(@ModelAttribute("pass") Password pass, @RequestParam("action") String action,
                               Model theModel) throws Exception {
             User user = userRepository.findById(8);
-
            Key key = generateKey(user.getPassword_hash());
            pass.setPassword(encrypt(pass.getPassword(), key));
            pass.setUser(user);

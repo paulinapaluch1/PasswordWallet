@@ -1,4 +1,4 @@
-package com.bsi.ppaluch;
+package com.bsi.ppaluch.login;
 
 import lombok.Data;
 
