@@ -11,9 +11,6 @@ public interface LoginRepository extends JpaRepository<Login, Integer> {
 
      List<Login> findAll();
 
-    @Query("SELECT p FROM Login p "  + "WHERE p.id = :id order by p.dateTime desc")
-    List<Login> findByUserId(int id);
-
     @Query("SELECT p FROM Login p "  + "WHERE p.user = :user order by p.dateTime desc")
     List<Login> findByUser(User user);
 

@@ -12,8 +12,6 @@ public interface IpAddressRepository extends JpaRepository<IpAddress, Integer> {
 
      List<IpAddress> findAll();
 
-     void deleteById(int id);
-
     @Query("SELECT p FROM IpAddress p "  + "WHERE p.id = :id")
     IpAddress findById(int id);
 

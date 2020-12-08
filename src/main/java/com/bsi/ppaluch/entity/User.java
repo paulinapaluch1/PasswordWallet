@@ -29,6 +29,9 @@ public class User {
    @Column(name="incorrect_login_trial_number")
    private int incorrectLoginTrialNumber;
 
+   @Column(name="email")
+   private String email;
+
    @OneToMany(mappedBy = "id")
    List<Password> passwordList;
 
@@ -40,5 +43,6 @@ public class User {
    }
 
    public User() {
+      
    }
 }

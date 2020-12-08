@@ -24,11 +24,9 @@ public class AESenc {
         return new String(decValue);
     }
 
-
     public static Key generateKey(String password) throws Exception {
         return new SecretKeySpec(calculateMD5(password), ALGO);
     }
-
 
     public static byte[] calculateMD5(String text) {
         try {

@@ -28,6 +28,9 @@ public class Password {
     @Column(name="login")
     private String login;
 
+    @Column(name="the_owner")
+    private Boolean theOwner;
+
     @Transient
     private String master;
 
@@ -41,5 +44,15 @@ public class Password {
 
     public Password() {
 
+    }
+
+    public Password(String web_address, String description,String login) {
+        setWeb_address(web_address);
+        setDescription(description);
+        setLogin(login);
+    }
+
+    public boolean isOwner(User passwordUser){
+        return theOwner && passwordUser.getId() == getUser().getId();
     }
 }

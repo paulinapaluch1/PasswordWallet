@@ -11,8 +11,6 @@ public interface PasswordRepository extends JpaRepository<Password, Integer> {
 
      List<Password> findAll();
 
-     void deleteById(int id);
-
     @Query("SELECT p FROM Password p "  + "WHERE p.id = :id")
     Password findByPasswordId(int id);
 

@@ -1,5 +1,8 @@
 package com.bsi.ppaluch.rest;
 
+import com.bsi.ppaluch.CurrentLoggedUser;
+import com.bsi.ppaluch.CurrentMode;
+import com.bsi.ppaluch.Mode;
 import com.bsi.ppaluch.crypto.Coder;
 import com.bsi.ppaluch.dao.IpAddressRepository;
 import com.bsi.ppaluch.dao.LoginRepository;
@@ -7,7 +10,6 @@ import com.bsi.ppaluch.dao.PasswordRepository;
 import com.bsi.ppaluch.dao.UserRepository;
 import com.bsi.ppaluch.entity.IpAddress;
 import com.bsi.ppaluch.entity.Login;
-import com.bsi.ppaluch.entity.Password;
 import com.bsi.ppaluch.entity.User;
 import com.bsi.ppaluch.login.LoginHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.bsi.ppaluch.CurrentLoggedUser.*;
+import static com.bsi.ppaluch.CurrentMode.getMode;
 
 
 @Controller
@@ -79,12 +83,13 @@ public class UserRestController {
             theModel.addAttribute("passwords", passwordRepository.findByUser(userDb));
             theModel.addAttribute("user", userDb);
             registerNewLogin(true,userDb,ip);
+            CurrentLoggedUser.setUser(userDb);
+            CurrentMode.setMode(Mode.READ);
             return "/passwords";
         }else{
             registerNewLogin(false,userDb,ip);
             theModel.addAttribute("user", userDb);
             setIncorrectLoginTrialNumber(userDb, userDb.getIncorrectLoginTrialNumber() + 1);
-
             if(userDb.getIncorrectLoginTrialNumber() > 1) {
                 theModel.addAttribute("info", "Niepoprawny login lub hasło. Czas następnej weryfikacji zostanie zwiększony do "
                         + getVerificationTime(userDb,ipAddress) + " sekund.");
@@ -97,8 +102,6 @@ public class UserRestController {
         }
 
     }
-
-
 
     private int getVerificationTime(User userDb,IpAddress ip) {
         return loginHelper.getVerificationTime(userDb.getIncorrectLoginTrialNumber(), ip.getIncorrectLoginTrialNumber());
@@ -153,10 +156,9 @@ public class UserRestController {
     }
 
     @GetMapping("/logins")
-    public String getUserLastLogins(@RequestParam("id") int id, Model theModel) {
-        User user = userRepository.findById(id);
-        List<Login> loginList = loginRepository.findByUser(user);
-        theModel.addAttribute("id",id);
+    public String getUserLastLogins( Model theModel) {
+        List<Login> loginList = loginRepository.findByUser(getUser());
+        theModel.addAttribute("id",getUser().getId());
         theModel.addAttribute("successfullLoginDate",findLastSuccessfulLogin(loginList));
         theModel.addAttribute("failedLoginDate",findLastFailedLogin(loginList) );
         List<IpAddress> ips = loginList
@@ -170,20 +172,23 @@ public class UserRestController {
     }
 
     private Date findLastFailedLogin(List<Login> loginList) {
-        return loginList
+        Login login = loginList
                 .stream()
                 .filter(d -> !d.isResult())
-                .findFirst().get()
-                .getDateTime();
+                .findFirst().orElse(null);
+        return login != null && login.getDateTime() != null ?
+                login.getDateTime() : null;
+
     }
 
     private Date findLastSuccessfulLogin(List<Login> loginList) {
-        return loginList
+       Login login =  loginList
                 .stream()
                 .filter(d -> d.isResult())
-                .findFirst()
-                .get()
-                .getDateTime();
+                .findFirst().orElse(null);
+     return login != null && login.getDateTime() != null ?
+             login.getDateTime() : null;
+
     }
 
 
@@ -194,10 +199,17 @@ public class UserRestController {
 
     @GetMapping("/users/unlock")
     public String unlockIP(@RequestParam("id") Integer id, @RequestParam("userId") Integer userId, Model theModel) throws Exception {
-        IpAddress ip = ipRepository.findById(id).get();
-        ip.setIncorrectLoginTrialNumber(0);
-        ipRepository.save(ip);
-
-        return getUserLastLogins(userId, theModel);
+        if(Mode.MODIFY.equals(getMode())) {
+            IpAddress ip = ipRepository.findById(id).get();
+            ip.setIncorrectLoginTrialNumber(0);
+            ipRepository.save(ip);
+        }
+        else{
+            theModel.addAttribute("info", "You are in READ mode. Change to MODIFY.");
+        }
+        return getUserLastLogins(theModel);
     }
+
+
+
 }

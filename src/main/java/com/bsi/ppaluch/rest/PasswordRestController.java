@@ -1,5 +1,7 @@
 package com.bsi.ppaluch.rest;
 
+import com.bsi.ppaluch.Mode;
+import com.bsi.ppaluch.PasswordSharer;
 import com.bsi.ppaluch.login.PasswordChanger;
 import com.bsi.ppaluch.crypto.Coder;
 import com.bsi.ppaluch.dao.PasswordRepository;
@@ -14,6 +16,9 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Key;
 import java.util.List;
 
+import static com.bsi.ppaluch.CurrentLoggedUser.*;
+import static com.bsi.ppaluch.CurrentMode.getMode;
+import static com.bsi.ppaluch.CurrentMode.setMode;
 import static com.bsi.ppaluch.crypto.AESenc.*;
 import static com.bsi.ppaluch.crypto.CalculatorHmac.calculateHMAC;
 import static com.bsi.ppaluch.crypto.Coder.*;
@@ -24,10 +29,8 @@ public class PasswordRestController {
     private PasswordRepository passwordRepository;
     @Autowired
     private UserRepository userRepository;
-    @Autowired
     Coder coder;
 
-    @Autowired
     public PasswordRestController(PasswordRepository passwordRepository) {
         this.passwordRepository = passwordRepository;
         coder = new Coder();
@@ -35,54 +38,70 @@ public class PasswordRestController {
 
     @GetMapping("/passwords")
     public String getAllPasswords(Model theModel)   {
-        theModel.addAttribute("passwords", passwordRepository.findAll());
-        theModel.addAttribute("userId",Integer.valueOf(8));
+        theModel.addAttribute("passwords", passwordRepository.findByUser(getUser()));
+        theModel.addAttribute("userId",Integer.valueOf(getUser().getId()));
         return "passwords";
     }
 
     @RequestMapping(value = "/passwords/change-master", method = RequestMethod.GET)
     public String changeMasterPassword(Model theModel)   {
-        PasswordChanger changer =  new PasswordChanger();
-        theModel.addAttribute("changer", changer);
-        return "changeMaster";
+        if(Mode.MODIFY.equals(getMode())) {
+            PasswordChanger changer = new PasswordChanger();
+            theModel.addAttribute("changer", changer);
+            return "changeMaster";
+
+        }else{
+            theModel.addAttribute("info", "You are in READ mode. Change to MODIFY.");
+            return getAllPasswords(theModel);
+        }
     }
 
 
     @RequestMapping(value = "/passwords/showFormForAdd", method = RequestMethod.GET)
     public String showFormForAddPassword(Model theModel)   {
-        theModel.addAttribute("pass", new Password());
-        theModel.addAttribute("web_address", "");
-        theModel.addAttribute("action", "add");
-        theModel.addAttribute("passwords", passwordRepository.findAll());
-        return "addPassword";
+        if(Mode.MODIFY.equals(getMode())) {
+            theModel.addAttribute("pass", new Password());
+            theModel.addAttribute("web_address", "");
+            theModel.addAttribute("action", "add");
+            theModel.addAttribute("passwords", passwordRepository.findByUser(getUser()));
+            return "addPassword";
+        }else{
+            theModel.addAttribute("info", "You are in READ mode. Change to MODIFY.");
+            return getAllPasswords(theModel);
+        }
     }
 
     @RequestMapping(value = "/passwords/save", method = RequestMethod.POST)
-    public String savePassword(@ModelAttribute("pass") Password pass, @RequestParam("action") String action,
+    public String savePassword(@ModelAttribute("pass") Password pass,
                               Model theModel) throws Exception {
-            User user = userRepository.findById(8);
+           User user = getUser();
            Key key = generateKey(user.getPassword_hash());
            pass.setPassword(encrypt(pass.getPassword(), key));
            pass.setUser(user);
+           pass.setTheOwner(true);
            passwordRepository.save(pass);
            return getAllPasswords(theModel);
     }
 
     @GetMapping("/passwords/encodePassword")
     public String encodePassword(@RequestParam("id") Integer id, Model theModel) throws Exception {
-        Password pass = passwordRepository.findByPasswordId(id);
-        User user = userRepository.findById(8);
-        String password = decrypt(pass.getPassword(),generateKey(user.getPassword_hash()));
-        theModel.addAttribute(pass);
-        theModel.addAttribute("passwordText", password);
-        theModel.addAttribute("passwords", passwordRepository.findAll());
-
-        return "/passwords";
+        if(Mode.MODIFY.equals(getMode())) {
+            Password pass = passwordRepository.findByPasswordId(id);
+            String password = decrypt(pass.getPassword(), generateKey(getUser().getPassword_hash()));
+            theModel.addAttribute(pass);
+            theModel.addAttribute("passwordText", password);
+            theModel.addAttribute("passwords", passwordRepository.findByUser(getUser()));
+            PasswordSharer sharer = new PasswordSharer(id);
+            theModel.addAttribute("sharer", sharer);
+        }else{
+            theModel.addAttribute("info", "You are in READ mode. Change to MODIFY.");
+        }
+        return getAllPasswords(theModel);
     }
 
     @RequestMapping(value = "/password/change", method = RequestMethod.POST)
     public String changeMaster(@ModelAttribute("changer") PasswordChanger changer, Model theModel) throws Exception {
-        User oldUser = userRepository.findById(8);
+        User oldUser = getUser();
         if (coder.isCorrectPassword(oldUser, changer.getOldPassword())) {
             if(changer.isKeepPaswordAsHash()) {
                 changeSHAPasswordMaster(changer, oldUser);
@@ -108,6 +127,7 @@ public class PasswordRestController {
         oldUser.setSalt(newSalt);
         oldUser.setPassword_hash(newHmac);
         userRepository.save(oldUser);
+        setUser(oldUser);
         passwordRepository.saveAll(currentPasswordList);
     }
 
@@ -120,18 +140,81 @@ public class PasswordRestController {
         oldUser.setSalt(newSalt);
         oldUser.setPassword_hash(newHash);
         userRepository.save(oldUser);
+        setUser(oldUser);
         passwordRepository.saveAll(currentPasswordList);
     }
 
 
     @GetMapping("/passwords/deletePassword")
     public String deletePassword(@RequestParam("id") Integer id, Model theModel) throws Exception {
-        passwordRepository.deleteById(id);
-        theModel.addAttribute("passwords", passwordRepository.findAll());
+        if(Mode.MODIFY.equals(getMode())) {
+            Password password = passwordRepository.findByPasswordId(id);
+            if (password.getTheOwner()) {
+                passwordRepository.deleteById(id);
+            } else {
+                theModel.addAttribute("reason", "You are not the owner");
+
+            }
+        }else{
+                theModel.addAttribute("info", "You are in READ mode. Change to MODIFY.");
+
+            }
+        theModel.addAttribute("passwords", passwordRepository.findByUser(getUser()));
         return "passwords";
     }
 
+    @RequestMapping(value = "/passwords/share", method = RequestMethod.POST)
+    public String sharePassword(@ModelAttribute("sharer") PasswordSharer sharer, Model theModel) throws Exception {
+        List<User> list = userRepository.findByEmail(sharer.getEmail());
+        Password password = passwordRepository.findByPasswordId(sharer.getPasswordId());
+        if(getUser().getEmail().equals(sharer.getEmail())){
+            theModel.addAttribute("reason", "You typed your own email adress");
+            theModel.addAttribute("shared", false);
+            return getAllPasswords(theModel);
+        }
+        if (password.getTheOwner()) {
+            if(!list.isEmpty()) {
+                sharePasswordWithUsers(list, password);
+                theModel.addAttribute("shared", true);
+            }else{
+                theModel.addAttribute("reason", "There is no user with this email in database");
+                theModel.addAttribute("shared", false);
+            }
+        } else {
+            theModel.addAttribute("reason", "You are not the owner");
+            theModel.addAttribute("shared", false);
 
+        }
+            return getAllPasswords(theModel);
+    }
 
+    private void sharePasswordWithUsers(List<User> list, Password password) throws Exception {
+        String passwordText = decrypt(password.getPassword(), generateKey(getUser().getPassword_hash()));
+        Password newPassword = new Password(password.getWeb_address(), password.getDescription(), password.getLogin());
+        for (User user : list) {
+            passwordRepository.save(prepareSharedPasswordToSave(passwordText, newPassword, user));
+        }
+    }
 
+    private Password prepareSharedPasswordToSave(String passwordText, Password newPassword, User user) throws Exception {
+        Key key = generateKey(user.getPassword_hash());
+        newPassword.setPassword(encrypt(passwordText, key));
+        newPassword.setUser(user);
+        newPassword.setTheOwner(false);
+        return newPassword;
+    }
+
+    @GetMapping("/readMode")
+    public String changeModeToRead(Model theModel) {
+        setMode(Mode.READ);
+        theModel.addAttribute("info", "You are in READ MODE");
+        return getAllPasswords(theModel);
+    }
+
+    @GetMapping("/modifyMode")
+    public String changeModeToModify(Model theModel) {
+        setMode(Mode.MODIFY);
+        theModel.addAttribute("info", "You are in MODIFY MODE");
+        return getAllPasswords(theModel);
+    }
 }

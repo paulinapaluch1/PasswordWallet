@@ -6,6 +6,5 @@ import lombok.Data;
 public class PasswordChanger {
     private String oldPassword;
     private String newPassword;
-
     private boolean keepPaswordAsHash;
 }
