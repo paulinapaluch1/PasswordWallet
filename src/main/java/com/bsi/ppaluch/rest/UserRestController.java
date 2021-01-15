@@ -1,16 +1,12 @@
 package com.bsi.ppaluch.rest;
 
+import com.bsi.ppaluch.ActionRegisterer;
 import com.bsi.ppaluch.CurrentLoggedUser;
 import com.bsi.ppaluch.CurrentMode;
 import com.bsi.ppaluch.Mode;
 import com.bsi.ppaluch.crypto.Coder;
-import com.bsi.ppaluch.dao.IpAddressRepository;
-import com.bsi.ppaluch.dao.LoginRepository;
-import com.bsi.ppaluch.dao.PasswordRepository;
-import com.bsi.ppaluch.dao.UserRepository;
-import com.bsi.ppaluch.entity.IpAddress;
-import com.bsi.ppaluch.entity.Login;
-import com.bsi.ppaluch.entity.User;
+import com.bsi.ppaluch.dao.*;
+import com.bsi.ppaluch.entity.*;
 import com.bsi.ppaluch.login.LoginHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -46,7 +42,16 @@ public class UserRestController {
     @Autowired
     private IpAddressRepository ipRepository;
     @Autowired
-    LoginRepository loginRepository;
+    private LoginRepository loginRepository;
+    @Autowired
+    private FunctionRepository functionRepository;
+    @Autowired
+    private FunctionRunRepository functionRunRepository;
+    @Autowired
+    private ActionRegisterer actionRegisterer;
+    @Autowired
+    private DataChangeRepository dataChangeRepository;
+
     private Coder coder;
 
     private LoginHelper loginHelper;
@@ -85,6 +90,7 @@ public class UserRestController {
             registerNewLogin(true,userDb,ip);
             CurrentLoggedUser.setUser(userDb);
             CurrentMode.setMode(Mode.READ);
+            actionRegisterer.registerAction("show_passwords");
             return "/passwords";
         }else{
             registerNewLogin(false,userDb,ip);
@@ -102,6 +108,9 @@ public class UserRestController {
         }
 
     }
+
+
+
 
     private int getVerificationTime(User userDb,IpAddress ip) {
         return loginHelper.getVerificationTime(userDb.getIncorrectLoginTrialNumber(), ip.getIncorrectLoginTrialNumber());
@@ -169,6 +178,21 @@ public class UserRestController {
                .collect(Collectors.toList());
         theModel.addAttribute("blockedIPs", ips);
         return "logins";
+    }
+
+    @GetMapping("/actions")
+    public String getUserLastActions( Model theModel) {
+        List<FunctionRun> functionRunList = functionRunRepository.findFunctionsRunForUser(getUser());
+        theModel.addAttribute("actions", functionRunList);
+        return "actions";
+    }
+
+    @GetMapping("/changes")
+    public String getUserLastChanges( Model theModel) {
+        List<DataChange> changesList = dataChangeRepository.findByUser(getUser());
+        theModel.addAttribute("changes", changesList);
+
+        return "changes";
     }
 
     private Date findLastFailedLogin(List<Login> loginList) {

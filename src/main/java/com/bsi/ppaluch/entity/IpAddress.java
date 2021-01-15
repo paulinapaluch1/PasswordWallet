@@ -12,6 +12,7 @@ public class IpAddress {
 
     @Id
     @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     @Column(name="ip_address")

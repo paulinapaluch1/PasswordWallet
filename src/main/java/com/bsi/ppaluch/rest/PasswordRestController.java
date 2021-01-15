@@ -1,5 +1,6 @@
 package com.bsi.ppaluch.rest;
 
+import com.bsi.ppaluch.ActionRegisterer;
 import com.bsi.ppaluch.Mode;
 import com.bsi.ppaluch.PasswordSharer;
 import com.bsi.ppaluch.login.PasswordChanger;
@@ -30,6 +31,8 @@ public class PasswordRestController {
     @Autowired
     private UserRepository userRepository;
     Coder coder;
+    @Autowired
+    ActionRegisterer actionRegisterer;
 
     public PasswordRestController(PasswordRepository passwordRepository) {
         this.passwordRepository = passwordRepository;
@@ -71,6 +74,38 @@ public class PasswordRestController {
         }
     }
 
+    @RequestMapping(value = "/passwords/editPassword", method = RequestMethod.GET)
+    public String showFormForEditPassword(@RequestParam("id") Integer id, Model theModel)   {
+        if(Mode.MODIFY.equals(getMode())) {
+            theModel.addAttribute("pass", passwordRepository.findByPasswordId(id));
+            theModel.addAttribute("web_address", "");
+            theModel.addAttribute("action", "add");
+            theModel.addAttribute("passwords", passwordRepository.findByUser(getUser()));
+            return "editPassword";
+        }else{
+            theModel.addAttribute("info", "You are in READ mode. Change to MODIFY.");
+            return getAllPasswords(theModel);
+        }
+    }
+
+    @RequestMapping(value = "/passwords/saveEdited", method = RequestMethod.POST)
+    public String saveEditedPassword(@ModelAttribute("pass") Password pass,
+                               Model theModel) throws Exception {
+        User user = getUser();
+        Key key = generateKey(user.getPassword_hash());
+        if(pass!=null) {
+            pass.setPassword(encrypt(pass.getPassword(), key));
+        }
+        pass.setUser(user);
+        pass.setTheOwner(true);
+        pass.setDeleted(false);
+        actionRegisterer.registerPasswordDataChange(passwordRepository.findByPasswordId(pass.getId()), pass,"save_edited",pass.getId());
+        passwordRepository.save(pass);
+        actionRegisterer.registerAction("save_edited_password");
+
+        return getAllPasswords(theModel);
+    }
+
     @RequestMapping(value = "/passwords/save", method = RequestMethod.POST)
     public String savePassword(@ModelAttribute("pass") Password pass,
                               Model theModel) throws Exception {
@@ -79,8 +114,14 @@ public class PasswordRestController {
            pass.setPassword(encrypt(pass.getPassword(), key));
            pass.setUser(user);
            pass.setTheOwner(true);
+           pass.setDeleted(false);
            passwordRepository.save(pass);
-           return getAllPasswords(theModel);
+        actionRegisterer.registerPasswordDataChange(null, pass,"add",pass.getId());
+
+        actionRegisterer.registerAction("add_password");
+
+
+        return getAllPasswords(theModel);
     }
 
     @GetMapping("/passwords/encodePassword")
@@ -93,9 +134,18 @@ public class PasswordRestController {
             theModel.addAttribute("passwords", passwordRepository.findByUser(getUser()));
             PasswordSharer sharer = new PasswordSharer(id);
             theModel.addAttribute("sharer", sharer);
+            actionRegisterer.registerAction("encode_password");
+
+
         }else{
             theModel.addAttribute("info", "You are in READ mode. Change to MODIFY.");
         }
+        return getAllPasswords(theModel);
+    }
+
+    @GetMapping("/passwords/recover")
+    public String recoverPassword(@RequestParam("id") Integer id, Model theModel) throws Exception {
+           actionRegisterer.recoverDataChange(id);
         return getAllPasswords(theModel);
     }
 
@@ -108,7 +158,9 @@ public class PasswordRestController {
             }
            else {
                 changeHmacPasswordMaster(changer, oldUser);
-            }
+           }
+            actionRegisterer.registerAction("change_master");
+
         } else {
                 theModel.addAttribute("info", "Niepoprawne obecne haslo");
                 return changeMasterPassword(theModel);
@@ -150,7 +202,11 @@ public class PasswordRestController {
         if(Mode.MODIFY.equals(getMode())) {
             Password password = passwordRepository.findByPasswordId(id);
             if (password.getTheOwner()) {
-                passwordRepository.deleteById(id);
+                password.setDeleted(true);
+                passwordRepository.save(password);
+                actionRegisterer.registerAction("delete_password");
+                actionRegisterer.registerPasswordDataChange(password, null,"delete",password.getId());
+
             } else {
                 theModel.addAttribute("reason", "You are not the owner");
 
@@ -208,6 +264,7 @@ public class PasswordRestController {
     public String changeModeToRead(Model theModel) {
         setMode(Mode.READ);
         theModel.addAttribute("info", "You are in READ MODE");
+        actionRegisterer.registerAction("change_mode_read");
         return getAllPasswords(theModel);
     }
 
@@ -215,6 +272,7 @@ public class PasswordRestController {
     public String changeModeToModify(Model theModel) {
         setMode(Mode.MODIFY);
         theModel.addAttribute("info", "You are in MODIFY MODE");
+        actionRegisterer.registerAction("change_mode_modify");
         return getAllPasswords(theModel);
     }
 }

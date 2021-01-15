@@ -13,7 +13,8 @@ import java.util.Date;
 public class Login {
     @Id
     @Column(name="id")
-    private int id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
 
     @ManyToOne(cascade = { CascadeType.DETACH })
     @JoinColumn(name = "user_id")

@@ -35,6 +35,12 @@ public class User {
    @OneToMany(mappedBy = "id")
    List<Password> passwordList;
 
+   @OneToMany(mappedBy = "id")
+   List<DataChange> dataChangesList;
+
+   @OneToMany(mappedBy = "id")
+   List<FunctionRun> functionRunList;
+
    public User(String login, String salt, String passwordHash, boolean isPasswordKeptAsHash) {
       this.login = login;
       this.salt = salt;

@@ -10,6 +10,7 @@ import javax.persistence.*;
 public class Password {
     @Id
     @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     @Column(name="password")
@@ -30,6 +31,9 @@ public class Password {
 
     @Column(name="the_owner")
     private Boolean theOwner;
+
+    @Column(name="deleted")
+    private Boolean deleted;
 
     @Transient
     private String master;

@@ -1,0 +1,79 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add password</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+          crossorigin="anonymous">
+    <script
+            src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+    <script
+            src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+    <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script
+            src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <link rel="stylesheet"
+          th:href="@{../css/demo.css}" type="text/css"/>
+</head>
+<body th:style="'background-color: #ffe6e6'">
+
+<div class="container list">
+    <br>
+    <h3 class="title" style="float:left;">Your actions</h3>
+    <nav class="navbar justify-content-end">
+        <input id="myInput" class="form-control col-4 mr-5 mb-2"type="text" placeholder="Search..">
+        <a th:href="@{/api/logins}">
+            <button type="button"
+                    class="btn btn btn-primary mr-3 mb-2">Back
+            </button>
+        </a>
+        <a th:href="@{/api/logout}">
+            <button type="button"
+                    class="btn btn btn-secondary mr-3 mb-2">Logout
+            </button>
+        </a>
+    </nav>
+
+    <div class="table-responsive">
+        <table style="background-color:white;width:80%;" class="table table-hover table-bordered table-sm mt-2">
+            <thead>
+            <tr class="table-secondary">
+                <th class="text-center">Id</th>
+                <th class="text-center">Date</th>
+                <th class="text-center">Function name</th>
+                <th class="text-center">Description</th>
+            </tr>
+            </thead>
+            <tbody id="myTable">
+            <tr th:each="action:${actions}">
+                <td class="text-center" th:text="${action.id}"/>
+                <td class="text-center" th:text="${#dates.format(action.dateTime,'dd.MM.yyyy HH:mm')}"/>
+                <td class="text-center" th:text="${action.function.name}"></td>
+                <td class="text-center" th:text="${action.function.description}"></td>
+
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+
+</div>
+</div>
+<script>
+$(document).ready(function(){
+  $("#myInput").on("keyup", function() {
+    var value = $(this).val().toLowerCase();
+    $("#myTable tr").filter(function() {
+      $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+    });
+  });
+});
+</script>
+</body>
+
+</html>
